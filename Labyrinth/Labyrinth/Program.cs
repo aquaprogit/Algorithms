@@ -6,12 +6,10 @@ const int width = 20;
 Maze maze = new Maze(height, width);
 State state = new State(maze, null);
 
-do
+foreach (var st in RBFS.Solve(state))
 {
-    Console.WriteLine(state.ToString());
-    Console.WriteLine(state.Maze.ToString());
-    int index = int.Parse(Console.ReadLine()!);
-    state = state.GetChildren()[index];
-} while (true);
+    Console.Write(st.Maze.Selected.Coordinate);
+    Console.Write(", ");
+}
 
 Console.ReadLine();
