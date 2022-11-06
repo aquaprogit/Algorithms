@@ -1,6 +1,9 @@
 ﻿using System.Text;
 
 using Labyrinth.Enums;
+using Labyrinth.Utils;
+
+using Newtonsoft.Json;
 
 namespace Labyrinth;
 internal class Maze
@@ -40,12 +43,6 @@ internal class Maze
         for (int i = 0; i < height; i++)
             for (int j = 0; j < width; j++)
                 Cells[i, j] = new Cell(CellType.Empty, (i, j));
-
-        Cells[0, 0] = new Cell(CellType.Source, (0, 0));
-        _sourceCoord = (0, 0);
-
-        Cells[height - 1, width - 1] = new Cell(CellType.Destination, (height - 1, width - 1));
-        _destinationCoord = (height - 1, width - 1);
     }
     private Maze() { }
 
@@ -103,6 +100,35 @@ internal class Maze
             _sourceCoord = this._sourceCoord
         };
     }
+
+    public static Maze LoadFromFile(string path)
+    {
+        CompressedCell[,] cells = JsonConvert.DeserializeObject<CompressedCell[,]>(File.ReadAllText(path))!;
+
+        int rows = cells.GetLength(0);
+        int columns = cells.GetLength(1);
+        Maze maze = new Maze(rows, columns);
+        for (int rowIndex = 0; rowIndex < rows; rowIndex++)
+        {
+            for (int columnIndex = 0; columnIndex < columns; columnIndex++)
+            {
+                Cell cell = cells[rowIndex, columnIndex].ToNormalCell();
+                if (cell.CellState is CellType.Source)
+                {
+                    maze._sourceCoord = cell.Coordinate;
+                    maze._selectedCoord = cell.Coordinate;
+                }
+                else if (cell.CellState is CellType.Destination)
+                {
+                    maze._destinationCoord = cell.Coordinate;
+                }
+                maze[rowIndex, columnIndex] = cell;
+            }
+        }
+
+        return maze;
+    }
+
     public override string ToString()
     {
         StringBuilder sb = new StringBuilder();

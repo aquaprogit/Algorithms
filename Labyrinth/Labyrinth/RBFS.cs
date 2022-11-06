@@ -9,24 +9,35 @@ internal static class RBFS
 {
     private static OrderedList<State> _prioritiets = new OrderedList<State>(new StateComparer());
     private static State _currentState = null!;
-    public static List<State> Solve(State state)
+    public static List<State>? Solve(State state, bool printEachState = false)
     {
         _currentState = state;
-        //int i = 0;
+        int iteration = 0;
         do
         {
+            if (printEachState)
+            {
+                StringBuilder sb = new StringBuilder();
+                sb.AppendLine($"================={iteration}=====================");
+                sb.AppendLine(_currentState.ToString());
+                sb.AppendLine(_currentState.Maze.ToString());
+                sb.AppendLine($"================={iteration++}=====================");
+                Console.WriteLine(sb.ToString());
+            }
+
             foreach (State child in _currentState.GetChildren())
             {
                 _prioritiets.Add(child);
             }
-            //  Console.WriteLine($"================={i}=====================");
+
+            if (_prioritiets.Count == 0)
+                break;
+
             _currentState = _prioritiets.First();
             _prioritiets.RemoveAt(0);
-            //Console.WriteLine(_currentState);
-            //Console.WriteLine(_currentState.Maze);
-            //  Console.WriteLine($"================={i++}=====================");
-
-        } while (_currentState.Distance != 1 && _prioritiets.Count != 0);
+        } while (_currentState.Distance != 1);
+        if (_currentState.Distance != 1)
+            return null;
         List<State> result = _currentState.GetPath();
         result.Reverse();
         return result;
