@@ -1,4 +1,6 @@
-﻿using Labyrinth.Enums;
+﻿using System.Xml.Linq;
+
+using Labyrinth.Enums;
 
 namespace Labyrinth;
 internal class State : IEquatable<State>
@@ -7,9 +9,21 @@ internal class State : IEquatable<State>
 
     public Maze Maze { get; set; } = null!;
     public State? Parent { get; set; }
-    public int Distance => (int)Cell.DistanceBetween(Maze.Selected, Maze.Destination);
+    public int Distance => (int)Math.Ceiling(Cell.DistanceBetween(Maze.Selected, Maze.Destination));
     public int Generation { get; set; }
     public int Evaluation { get; set; }
+    public List<State> GetDepth()
+    {
+        List<State> path = new List<State>();
+        foreach (State node in GetChildren())
+        {
+            List<State> tmp = node.GetDepth();
+            if (tmp.Count > path.Count)
+                path = tmp;
+        }
+        path.Insert(0, this);
+        return path;
+    }
     public State(Maze maze, State? parent)
     {
         Maze = maze ?? throw new ArgumentNullException(nameof(maze));
