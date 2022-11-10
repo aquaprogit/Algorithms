@@ -24,22 +24,21 @@ using Labyrinth.Enums;
 //maze[4, 13].CellState = CellType.Wall;
 #endregion
 
-Maze maze = Maze.LoadFromFile(@"C:\Users\vladd\source\repos\wpf\wpf\bin\Debug\net6.0-windows\result.json");
+Maze maze = Maze.LoadFromFile(@"C:\Users\vladd\source\repos\KPI\Algorithms\Labyrinth\LabyrinthMaker\bin\Debug\net6.0-windows\result.json");
 
 Console.WindowHeight = 26;
-Console.WindowWidth  = 48;
+Console.WindowWidth = 48;
 
 Console.WriteLine(maze.ToString());
 
 State state = new State(maze, null);
 
 var res = RBFS.Solve(state, true);
-if (res == null)
+if (res.State == null)
     Console.WriteLine("There is no way");
 else
 {
-    Console.WriteLine(res.Last().Maze);
-    foreach (var st in res)
+    foreach (var st in res.State.GetPath())
     {
         Console.Write(st.Maze.Selected.Coordinate);
         Console.Write(", ");

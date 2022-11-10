@@ -9,12 +9,13 @@ internal class State : IEquatable<State>
     public State? Parent { get; set; }
     public int Distance => (int)Cell.DistanceBetween(Maze.Selected, Maze.Destination);
     public int Generation { get; set; }
-    public int Evaluation => Distance + Generation;
+    public int Evaluation { get; set; }
     public State(Maze maze, State? parent)
     {
         Maze = maze ?? throw new ArgumentNullException(nameof(maze));
         Parent = parent;
         Generation = 1 + parent?.Generation ?? 0;
+        Evaluation = Distance + Generation;
     }
     public List<State> GetChildren()
     {
@@ -77,7 +78,6 @@ internal class State : IEquatable<State>
         newState = new State(moved, this);
         return true;
     }
-
 
     public bool Equals(State? other)
     {

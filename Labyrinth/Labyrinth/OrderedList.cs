@@ -32,10 +32,10 @@ internal class OrderedList<T> : IList<T>
     public void Clear() => _innerList.Clear();
     public bool Contains(T item) => _innerList.Contains(item);
     public void CopyTo(T[] array, int arrayIndex) => _innerList.CopyTo(array, arrayIndex);
-    public IEnumerator<T> GetEnumerator() => _innerList.GetEnumerator();
     public int IndexOf(T item) => _innerList.IndexOf(item);
     public void Insert(int index, T item) => throw new NotSupportedException("Cannot insert an indexed item in a sorted list.");
     public bool Remove(T item) => _innerList.Remove(item);
     public void RemoveAt(int index) => _innerList.RemoveAt(index);
+    public IEnumerator<T> GetEnumerator() => _innerList.GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }

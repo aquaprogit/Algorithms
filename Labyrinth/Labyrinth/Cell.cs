@@ -23,7 +23,7 @@ internal class Cell
         double squareDistance = Math.Pow(destination.Coordinate.X - source.Coordinate.X, 2)
                                 + Math.Pow(destination.Coordinate.Y - source.Coordinate.Y, 2);
 
-        return Math.Ceiling(Math.Sqrt(squareDistance));
+        return Math.Sqrt(squareDistance);
     }
     public static double DistanceBetween((int x, int y) source, (int x, int y) destination)
     {
