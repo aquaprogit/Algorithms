@@ -1,8 +1,6 @@
-﻿using System.Xml.Linq;
+﻿using Labyrinth.Enums;
 
-using Labyrinth.Enums;
-
-namespace Labyrinth;
+namespace Labyrinth.Model;
 internal class State : IEquatable<State>
 {
     private List<State> _children = null!;
@@ -83,7 +81,7 @@ internal class State : IEquatable<State>
 
         if (below == null)
             return false;
-        if (below.CellState is not CellType.Empty)
+        if (below.Type is not CellType.Empty)
             return false;
 
         Maze moved = Maze.Clone();

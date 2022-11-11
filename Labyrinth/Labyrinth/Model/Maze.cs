@@ -5,7 +5,7 @@ using Labyrinth.Utils;
 
 using Newtonsoft.Json;
 
-namespace Labyrinth;
+namespace Labyrinth.Model;
 internal class Maze
 {
     private (int x, int y) _selectedCoord;
@@ -13,6 +13,16 @@ internal class Maze
     private (int x, int y) _destinationCoord;
 
     public Cell[,] Cells { get; init; }
+
+    public Cell? this[int x, int y]
+    {
+        get => Enumerable.Range(0, Cells.GetLength(0)).Contains(x)
+                && Enumerable.Range(0, Cells.GetLength(1)).Contains(y)
+                ? Cells[x, y]
+                : null;
+
+        set => Cells[x, y] = value ?? throw new ArgumentNullException(nameof(value));
+    }
 
     public Cell Selected
     {
@@ -30,21 +40,43 @@ internal class Maze
         set => this[_destinationCoord.x, _destinationCoord.y] = value;
     }
 
-    public Maze(Cell[,] cells, (int x, int y) source, (int x, int y) destination)
-    {
-        Cells = cells ?? throw new ArgumentNullException(nameof(cells));
-        _sourceCoord = source;
-        _destinationCoord = destination;
-    }
-
     public Maze(int height, int width)
     {
         Cells = new Cell[height, width];
         for (int i = 0; i < height; i++)
+        {
             for (int j = 0; j < width; j++)
+            {
                 Cells[i, j] = new Cell(CellType.Empty, (i, j));
+            }
+        }
     }
-    private Maze() { }
+    public Maze(Cell[,] cells)
+    {
+        Cells = cells ?? throw new ArgumentNullException(nameof(cells));
+        List<Cell> list = cells.ToList();
+
+        if (list.Count(cell => cell.Type == CellType.Source) != 1)
+            throw new ArgumentException("Maze matrix have to include single entrance", nameof(cells));
+
+        if (list.Count(cell => cell.Type == CellType.Destination) != 1)
+            throw new ArgumentException("Maze matrix have to include single exit", nameof(cells));
+
+        if (list.Count(cell => cell.Type == CellType.Selected) > 1)
+            throw new ArgumentException("Maze matrix have to include single selected cell", nameof(cells));
+
+        foreach (Cell cell in cells.ToList())
+        {
+            if (cell.Type == CellType.Source)
+                _sourceCoord = cell.Coordinate;
+
+            if (cell.Type == CellType.Destination)
+                _destinationCoord = cell.Coordinate;
+
+            if (cell.Type == CellType.Selected)
+                _selectedCoord = cell.Coordinate;
+        }
+    }
 
     public void MoveSelection(Direction direction)
     {
@@ -73,52 +105,36 @@ internal class Maze
         if (currCoord.y < 0 || currCoord.y >= height)
             return;
 
-        if (Cells[currCoord.x, currCoord.y].CellState is not CellType.Empty)
+        if (Cells[currCoord.x, currCoord.y].Type is not CellType.Empty)
             return;
 
-        if (Selected.CellState != CellType.Source)
+        if (Selected.Type != CellType.Source)
         {
-            Selected.CellState = CellType.Visited;
+            Selected.Type = CellType.Visited;
         }
         _selectedCoord = currCoord;
-        Selected.CellState = CellType.Selected;
+        Selected.Type = CellType.Selected;
 
-    }
-    public Maze Clone()
-    {
-        int rows = Cells.GetLength(0);
-        int cols = Cells.GetLength(1);
-        Cell[,] cells = new Cell[rows, cols];
-        for (int i = 0; i < rows; i++)
-            for (int j = 0; j < cols; j++)
-                cells[i, j] = Cells[i, j].Clone();
-
-        return new Maze() {
-            Cells = cells,
-            _selectedCoord = this._selectedCoord,
-            _destinationCoord = this._destinationCoord,
-            _sourceCoord = this._sourceCoord
-        };
     }
 
     public static Maze LoadFromFile(string path)
     {
-        CompressedCell[,] cells = JsonConvert.DeserializeObject<CompressedCell[,]>(File.ReadAllText(path))!;
+        CompressedCell[,] deserialized = JsonConvert.DeserializeObject<CompressedCell[,]>(File.ReadAllText(path))!;
 
-        int rows = cells.GetLength(0);
-        int columns = cells.GetLength(1);
+        int rows = deserialized.GetLength(0);
+        int columns = deserialized.GetLength(1);
         Maze maze = new Maze(rows, columns);
         for (int rowIndex = 0; rowIndex < rows; rowIndex++)
         {
             for (int columnIndex = 0; columnIndex < columns; columnIndex++)
             {
-                Cell cell = cells[rowIndex, columnIndex].ToNormalCell();
-                if (cell.CellState is CellType.Source)
+                Cell cell = deserialized[rowIndex, columnIndex].ToNormalCell();
+                if (cell.Type is CellType.Source)
                 {
                     maze._sourceCoord = cell.Coordinate;
                     maze._selectedCoord = cell.Coordinate;
                 }
-                else if (cell.CellState is CellType.Destination)
+                else if (cell.Type is CellType.Destination)
                 {
                     maze._destinationCoord = cell.Coordinate;
                 }
@@ -129,6 +145,19 @@ internal class Maze
         return maze;
     }
 
+    public Maze Clone()
+    {
+        int rows = Cells.GetLength(0);
+        int cols = Cells.GetLength(1);
+        Cell[,] cells = new Cell[rows, cols];
+        for (int i = 0; i < rows; i++)
+        {
+            for (int j = 0; j < cols; j++)
+                cells[i, j] = Cells[i, j].Clone();
+        }
+
+        return new Maze(cells);
+    }
     public override string ToString()
     {
         StringBuilder sb = new StringBuilder();
@@ -137,7 +166,8 @@ internal class Maze
             sb.Append('\n');
             for (int column = 0; column < Cells.GetLength(1); column++)
             {
-                string value = Cells[row, column].CellState switch {
+                string value = Cells[row, column].Type switch
+                {
                     CellType.Empty => " ",
                     CellType.Source => "s",
                     CellType.Destination => "d",
@@ -150,16 +180,5 @@ internal class Maze
             }
         }
         return sb.ToString();
-    }
-    public Cell? this[int x, int y]
-    {
-        get {
-            return Enumerable.Range(0, Cells.GetLength(0)).Contains(x)
-                && Enumerable.Range(0, Cells.GetLength(1)).Contains(y)
-                ? Cells[x, y]
-                : null;
-        }
-
-        set => Cells[x, y] = value ?? throw new ArgumentNullException(nameof(value));
     }
 }

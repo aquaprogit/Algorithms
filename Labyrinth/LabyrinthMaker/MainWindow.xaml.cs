@@ -1,19 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using System.Xml;
 
 using Newtonsoft.Json;
 
@@ -24,7 +15,7 @@ namespace LabyrinthMaker;
 public partial class MainWindow : Window
 {
     private int _size = 10;
-    Brush _selectedBrush = Brushes.Black;
+    private Brush _selectedBrush = Brushes.Black;
     public int Size
     {
         get => _size;
@@ -96,9 +87,9 @@ public partial class MainWindow : Window
         {
             for (int columnIndex = 0; columnIndex < Size; columnIndex++)
             {
-                Grid? curr = ((Grid)Main_Grid.Children[0]).Children.Cast<Border>().First(b => Grid.GetRow(b) == rowIndex && Grid.GetColumn(b) == columnIndex).Child as Grid;
                 CellState state = CellState.Empty;
-                if (curr == null)
+                if (((Grid)Main_Grid.Children[0]).Children.Cast<Border>().First(b => Grid.GetRow(b) == rowIndex
+                    && Grid.GetColumn(b) == columnIndex).Child is not Grid curr)
                     continue;
 
                 if (curr.Background == Brushes.Black)
@@ -111,12 +102,13 @@ public partial class MainWindow : Window
                 cells[rowIndex, columnIndex] = new CompressedCell((columnIndex, rowIndex), state);
             }
         }
-        string result = JsonConvert.SerializeObject(cells, Newtonsoft.Json.Formatting.Indented);
+        string result = JsonConvert.SerializeObject(cells, Formatting.Indented);
         File.WriteAllText("result.json", result);
-        MessageBox.Show("Saved successfully");
+        MessageBox.Show("Saved successfully", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 }
-struct CompressedCell
+
+internal struct CompressedCell
 {
     public (int, int) Coordinate;
     public CellState State;
@@ -127,7 +119,8 @@ struct CompressedCell
         State = state;
     }
 }
-enum CellState
+
+internal enum CellState
 {
     Empty,
     Source,

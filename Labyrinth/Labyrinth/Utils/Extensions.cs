@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Text;
+using Labyrinth.Model;
 
 namespace Labyrinth.Utils;
 internal static class Extensions
@@ -20,5 +17,22 @@ internal static class Extensions
         sb.AppendLine($"================={(iteration?.ToString()) ?? "="}=====================");
         Console.WriteLine(sb.ToString());
         Thread.Sleep(1);
+    }
+    public static List<T> ToList<T>(this T[,] self)
+    {
+        List<T> list = new List<T>();
+        for (int rowIndex = 0; rowIndex < self.GetLength(0); rowIndex++)
+        {
+            for (int columnIndex = 0; columnIndex < self.GetLength(1); columnIndex++)
+            {
+                list.Add(self[rowIndex, columnIndex]);
+            }
+        }
+
+        return list;
+    }
+    public static string ToString<T>(this (T item1, T item2) self)
+    {
+        return $"[{self.item1}; {self.item2}]";
     }
 }

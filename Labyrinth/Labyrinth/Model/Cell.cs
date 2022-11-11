@@ -1,14 +1,14 @@
 ﻿using Labyrinth.Enums;
 
-namespace Labyrinth;
+namespace Labyrinth.Model;
 internal class Cell
 {
     public (int X, int Y) Coordinate { get; private set; }
-    public CellType CellState { get; set; }
+    public CellType Type { get; set; }
 
     public Cell(CellType type, (int Y, int X) coordinate)
     {
-        CellState = type;
+        Type = type;
         Coordinate = coordinate;
     }
 
@@ -34,10 +34,10 @@ internal class Cell
     }
     public override string ToString()
     {
-        return $"{CellState} at {Coordinate}";
+        return $"{Type} at {Coordinate}";
     }
     public Cell Clone()
     {
-        return new Cell(CellState, Coordinate);
+        return new Cell(Type, Coordinate);
     }
 }

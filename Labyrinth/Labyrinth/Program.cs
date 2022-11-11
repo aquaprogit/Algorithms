@@ -1,23 +1,36 @@
-﻿using Labyrinth;
+﻿using Labyrinth.Model;
+using Labyrinth.PathSolver;
+using Labyrinth.Utils;
 
-Maze maze = Maze.LoadFromFile(@"C:\Users\vladd\source\repos\KPI\Algorithms\Labyrinth\LabyrinthMaker\bin\Debug\net6.0-windows\result.json");
+internal class Program
+{
+    private static string _fileName = "result.json";
+    private static void Main(string[] args)
+    {
+        string path = Directory.GetCurrentDirectory().Replace(@"Labyrinth\bin", @"LabyrinthMaker\bin") + "-windows\\" + _fileName;
 
-Console.WindowHeight = maze.Cells.GetLength(0) + 6;
-Console.WindowWidth = 45;
+        Maze maze = Maze.LoadFromFile(path);
 
-Console.WriteLine(maze.ToString());
+        ResizeWindow(maze.Cells.GetLength(0), maze.Cells.GetLength(1) * 4 + 5);
 
-State state = new State(maze, null);
-
-var res = RBFS.Solve(state);
-//if (res.State == null)
-//    Console.WriteLine("There is no way");
-//else
-//{
-//    foreach (var st in res.State.GetPath())
-//    {
-//        Console.Write(st.Maze.Selected.Coordinate);
-//        Console.Write(", ");
-//    }
-//}
-Console.ReadLine();
+        State state = new State(maze, null);
+        IPathSolver solver = new RBFS();
+        SearchResult res = solver.Solve(state, true);
+        if (res.State == null)
+        {
+            Console.WriteLine("There is no way");
+        }
+        else
+        {
+            IEnumerable<State> solutionPath = res.State.GetPath().AsEnumerable();
+            Console.WriteLine(solutionPath.First(st => st.Distance == 1).Maze);
+            Console.WriteLine(string.Join(", ", solutionPath.Reverse().Select(part => part.Maze.Selected.Coordinate.ToString())));
+        }
+        Console.ReadLine();
+    }
+    private static void ResizeWindow(int height, int width)
+    {
+        Console.WindowHeight = height + 6;
+        Console.WindowWidth = width;
+    }
+}

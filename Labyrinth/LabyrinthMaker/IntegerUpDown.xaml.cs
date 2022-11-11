@@ -16,7 +16,8 @@ public partial class IntegerUpDown : UserControl, INotifyPropertyChanged
     {
         InitializeComponent();
     }
-    public int Value {
+    public int Value
+    {
         get => (int)GetValue(ValueProperty);
         set {
             if (value >= MinValue && value <= MaxValue)
@@ -27,7 +28,8 @@ public partial class IntegerUpDown : UserControl, INotifyPropertyChanged
             }
         }
     }
-    public int MaxValue {
+    public int MaxValue
+    {
         get => (int)GetValue(MaxValueProperty);
         set {
             if (value > MinValue)
@@ -36,7 +38,8 @@ public partial class IntegerUpDown : UserControl, INotifyPropertyChanged
                 throw new ArgumentOutOfRangeException("MaxValue can not be greater than MinValue");
         }
     }
-    public int MinValue {
+    public int MinValue
+    {
         get => (int)GetValue(MinValueProperty);
         set {
             if (value < MaxValue)
