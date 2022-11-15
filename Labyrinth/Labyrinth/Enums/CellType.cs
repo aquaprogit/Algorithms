@@ -1,6 +1,6 @@
 ﻿namespace Labyrinth.Enums;
 
-internal enum CellType
+public enum CellType
 {
     Empty,
     Source,

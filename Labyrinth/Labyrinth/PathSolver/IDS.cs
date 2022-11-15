@@ -8,17 +8,17 @@ internal class IDS : IPathSolver
     public SearchResult Solve(State state, bool printSteps = false)
     {
         _iteration = 0;
-        List<State> states = state.GetDepth();
-        for (int depth = 0; depth < states.Count; depth++)
+        int states = state.GetDepth().Count;
+        for (int depth = 0; depth <= states; depth++)
         {
-            SearchResult searchResult = DFS(state, state, depth, printSteps);
+            SearchResult searchResult = DFS(state, state, depth, 0, printSteps);
             if (searchResult.State != null)
-                return new SearchResult(state, state.Generation);
+                return new SearchResult(searchResult.State, searchResult.State.Generation);
         }
         return new SearchResult(null, int.MaxValue);
     }
 
-    private SearchResult DFS(State init, State current, int depth, bool printSteps)
+    private SearchResult DFS(State init, State current, int depth, int storedCount, bool printSteps)
     {
         if (current.Generation < depth)
         {
@@ -26,10 +26,11 @@ internal class IDS : IPathSolver
                 current.PrintState(++_iteration);
 
             if (current.Distance == 1)
-                return new SearchResult(current, current.Generation);
-            foreach (State child in current.GetChildren())
+                return new SearchResult(current, storedCount);
+            List<State> children = current.GetChildren();
+            foreach (State child in children)
             {
-                SearchResult result = DFS(init, child, depth, printSteps);
+                SearchResult result = DFS(init, child, depth, storedCount + children.Count, printSteps);
                 if (result.State != null)
                     return result;
             }

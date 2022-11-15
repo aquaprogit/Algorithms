@@ -6,6 +6,8 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 
+using Labyrinth.Enums;
+
 using Newtonsoft.Json;
 
 namespace LabyrinthMaker;
@@ -16,11 +18,16 @@ public partial class MainWindow : Window
 {
     private int _size = 10;
     private Brush _selectedBrush = Brushes.Black;
+    private MazeGenerator _mazeGenerator;
     public int Size
     {
         get => _size;
         set {
             _size = value;
+            if (_size % 2 == 0)
+            {
+                _size++;
+            }
             Grid grid = new Grid();
             for (int i = 0; i < Size; i++)
             {
@@ -57,7 +64,24 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         DataContext = this;
-        Size_IUP.Value = 10;
+        Size_IUP.Value = 11;
+        Size = 11;
+        _mazeGenerator = new MazeGenerator((cells) => {
+            for (int rowIndex = 0; rowIndex < cells.GetLength(0); rowIndex++)
+            {
+                for (int columnIndex = 0; columnIndex < cells.GetLength(1); columnIndex++)
+                {
+                    IEnumerable<Border> borders = ((Grid)Main_Grid.Children[0]).Children.Cast<Border>();
+                    if (borders.First(b => Grid.GetRow(b) == rowIndex
+                        && Grid.GetColumn(b) == columnIndex).Child is not Grid curr)
+                    {
+                        continue;
+                    }
+
+                    curr.Background = cells[rowIndex, columnIndex] ? Brushes.White : Brushes.Black;
+                }
+            }
+        });
     }
 
     private void Cell_MouseEnter(object sender, MouseEventArgs e)
@@ -87,17 +111,19 @@ public partial class MainWindow : Window
         {
             for (int columnIndex = 0; columnIndex < Size; columnIndex++)
             {
-                CellState state = CellState.Empty;
+                CellType state = CellType.Empty;
                 if (((Grid)Main_Grid.Children[0]).Children.Cast<Border>().First(b => Grid.GetRow(b) == rowIndex
                     && Grid.GetColumn(b) == columnIndex).Child is not Grid curr)
+                {
                     continue;
+                }
 
                 if (curr.Background == Brushes.Black)
-                    state = CellState.Wall;
+                    state = CellType.Wall;
                 else if (curr.Background == Brushes.Red)
-                    state = CellState.Destination;
+                    state = CellType.Destination;
                 else if (curr.Background == Brushes.Green)
-                    state = CellState.Source;
+                    state = CellType.Source;
 
                 cells[rowIndex, columnIndex] = new CompressedCell((columnIndex, rowIndex), state);
             }
@@ -106,26 +132,40 @@ public partial class MainWindow : Window
         File.WriteAllText("result.json", result);
         MessageBox.Show("Saved successfully", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
     }
-}
 
-internal struct CompressedCell
-{
-    public (int, int) Coordinate;
-    public CellState State;
-
-    public CompressedCell((int, int) coordinate, CellState state)
+    private void Button_Click_1(object sender, RoutedEventArgs e)
     {
-        Coordinate = coordinate;
-        State = state;
-    }
-}
+        string json = File.ReadAllText("result.json");
+        CompressedCell[,]? cells = JsonConvert.DeserializeObject<CompressedCell[,]>(json);
+        if (cells == null)
+        {
+            MessageBox.Show("Error");
+            return;
+        }
+        Size = cells.GetLength(0);
+        for (int rowIndex = 0; rowIndex < cells.GetLength(0); rowIndex++)
+        {
+            for (int columnIndex = 0; columnIndex < cells.GetLength(1); columnIndex++)
+            {
+                IEnumerable<Border> borders = ((Grid)Main_Grid.Children[0]).Children.Cast<Border>();
+                if (borders.First(b => Grid.GetRow(b) == rowIndex
+                    && Grid.GetColumn(b) == columnIndex).Child is not Grid curr)
+                {
+                    continue;
+                }
 
-internal enum CellState
-{
-    Empty,
-    Source,
-    Destination,
-    Visited,
-    Selected,
-    Wall
+                curr.Background = cells[rowIndex, columnIndex].State switch {
+                    CellType.Empty or CellType.Visited or CellType.Selected => Brushes.White,
+                    CellType.Source => Brushes.Green,
+                    CellType.Destination => Brushes.Red,
+                    CellType.Wall => Brushes.Black,
+                    _ => throw new System.NotImplementedException()
+                };
+            }
+        }
+    }
+    private void GenerateButton_Click(object sender, RoutedEventArgs e)
+    {
+        _mazeGenerator.GenerateMaze(Size);
+    }
 }

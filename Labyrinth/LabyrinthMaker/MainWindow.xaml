@@ -25,11 +25,20 @@
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center">
             <Button Content="Save"
-                    Grid.Row="1"
-                    Padding="50, 10"
+                    Padding="30, 10"
                     FontSize="20"
                     Click="Button_Click" />
-            <control:IntegerUpDown Value="{Binding Size, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+            <Button Content="Load"
+                    Click="Button_Click_1"
+                    Padding="30,10"
+                    FontSize="20"
+                    Margin="10,0" />
+            <Button Content="Generate"
+                    Click="GenerateButton_Click"
+                    Padding="30,10"
+                    FontSize="20"
+                    Margin="10,0"/>
+            <control:IntegerUpDown Value="{Binding Size, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                    Margin="25,0,0,0"
                                    Width="100"
                                    x:Name="Size_IUP"

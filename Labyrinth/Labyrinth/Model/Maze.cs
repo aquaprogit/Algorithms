@@ -65,10 +65,14 @@ internal class Maze
         if (list.Count(cell => cell.Type == CellType.Selected) > 1)
             throw new ArgumentException("Maze matrix have to include single selected cell", nameof(cells));
 
-        foreach (Cell cell in cells.ToList())
+        foreach (Cell cell in list)
         {
             if (cell.Type == CellType.Source)
+            {
                 _sourceCoord = cell.Coordinate;
+                if (list.Any(c => c.Type == CellType.Selected) == false)
+                    _selectedCoord = cell.Coordinate;
+            }
 
             if (cell.Type == CellType.Destination)
                 _destinationCoord = cell.Coordinate;
@@ -166,8 +170,7 @@ internal class Maze
             sb.Append('\n');
             for (int column = 0; column < Cells.GetLength(1); column++)
             {
-                string value = Cells[row, column].Type switch
-                {
+                string value = Cells[row, column].Type switch {
                     CellType.Empty => " ",
                     CellType.Source => "s",
                     CellType.Destination => "d",

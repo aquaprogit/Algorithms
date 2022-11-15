@@ -1,4 +1,5 @@
 ﻿using System.Text;
+
 using Labyrinth.Model;
 
 namespace Labyrinth.Utils;
@@ -34,5 +35,15 @@ internal static class Extensions
     public static string ToString<T>(this (T item1, T item2) self)
     {
         return $"[{self.item1}; {self.item2}]";
+    }
+    public static int GetTotalNodes(this State state)
+    {
+        List<State> children = state.GetChildren();
+        int childrenCount = children.Count;
+
+        if (childrenCount == 0)
+            return 0;
+
+        return childrenCount + children.Select(child => child.GetTotalNodes()).Sum();
     }
 }
