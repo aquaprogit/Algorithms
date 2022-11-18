@@ -42,8 +42,8 @@
                                    Margin="25,0,0,0"
                                    Width="100"
                                    x:Name="Size_IUP"
-                                   MinValue="10"
-                                   MaxValue="20" />
+                                   MinValue="5"
+                                   MaxValue="1111" />
         </StackPanel>
         <StackPanel HorizontalAlignment="Center"
                     Orientation="Horizontal"

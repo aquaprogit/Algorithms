@@ -1,5 +1,7 @@
-﻿using System.Text;
+﻿using System.ComponentModel.Design;
+using System.Text;
 
+using Labyrinth.Enums;
 using Labyrinth.Model;
 
 namespace Labyrinth.Utils;
@@ -36,14 +38,19 @@ internal static class Extensions
     {
         return $"[{self.item1}; {self.item2}]";
     }
-    public static int GetTotalNodes(this State state)
+    public static List<State> GetTotalNodes(this State state, List<State>? result = null)
     {
+        result ??= new List<State>();
+        result.Add(state);
         List<State> children = state.GetChildren();
-        int childrenCount = children.Count;
-
-        if (childrenCount == 0)
-            return 0;
-
-        return childrenCount + children.Select(child => child.GetTotalNodes()).Sum();
+        foreach (State child in children)
+        {
+            child.GetTotalNodes(result);
+        }
+        return result;
+    }
+    public static int GetTotalImpasses(this State state)
+    {
+        return state.Maze.Cells.ToList().Count(cell => cell.Coordinate.X != 0 && cell.Coordinate.Y != 0 && cell.Coordinate.X != state.Maze.Cells.GetLength(0) - 1 && cell.Coordinate.Y != state.Maze.Cells.GetLength(1) && state.Maze.Neighbors(cell.Coordinate).Count(n => n == null || n.Type == CellType.Wall) == 3);
     }
 }

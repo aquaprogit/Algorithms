@@ -1,25 +1,25 @@
-﻿using Labyrinth.Model;
+﻿using System.Diagnostics;
+
+using Labyrinth.Model;
 using Labyrinth.PathSolver;
 using Labyrinth.Utils;
 
 internal class Program
 {
-    private static readonly string _fileName = "result.json";
     private static void Main(string[] args)
     {
-        string path = Directory.GetCurrentDirectory().Replace(@"Labyrinth\bin", @"LabyrinthMaker\bin") + "-windows\\" + _fileName;
+        //for (int i = 1; i <= 20; i++)
+        //{
+        string path = Directory.GetCurrentDirectory().Replace(@"Labyrinth\bin", @"LabyrinthMaker\bin") + "-windows\\" + "result.json";
 
         Maze maze = Maze.LoadFromFile(path);
 
-        ResizeWindow(maze.Cells.GetLength(0), maze.Cells.GetLength(1) * 4 + 5);
-
         State state = new State(maze, null);
-        Console.WriteLine(state.Maze.ToString());
         IPathSolver solver = new RBFS();
-        SearchResult res = solver.Solve(state, true);
-        Console.WriteLine("Stored states: " + res.Path.ToString());
-        Console.WriteLine("Total nodes: " + state.GetTotalNodes());
-        Console.WriteLine(state.Maze.ToString());
+        Stopwatch sw = Stopwatch.StartNew();
+        SearchResult res = solver.Solve(state, false);
+        sw.Stop();
+        Console.WriteLine(sw.ElapsedMilliseconds);
         if (res.State == null)
         {
             Console.WriteLine("There is no way");
@@ -27,10 +27,12 @@ internal class Program
         else
         {
             IEnumerable<State> solutionPath = res.State.GetPath().AsEnumerable();
-            Console.WriteLine(solutionPath.First(st => st.Distance == 1).Maze);
+            //Console.WriteLine(solutionPath.First(st => st.Distance == 1).Maze);
+            Console.WriteLine("Dead ends: " + state.GetTotalImpasses());
+            Console.WriteLine("Total nodes: " + state.GetTotalNodes().Count);
+            Console.WriteLine("Stored states: " + res.Path.ToString());
             Console.WriteLine(string.Join(" -> ", solutionPath.Reverse().Select(part => part.Maze.Selected.Coordinate.ToString())));
         }
-        Console.ReadLine();
     }
     private static void ResizeWindow(int height, int width)
     {

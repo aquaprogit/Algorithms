@@ -148,7 +148,14 @@ internal class Maze
 
         return maze;
     }
-
+    public List<Cell?> Neighbors((int x, int y) coordinate)
+    {
+        Cell? top = this[coordinate.x + 1, coordinate.y];
+        Cell? right = this[coordinate.x, coordinate.y + 1];
+        Cell? bottom = this[coordinate.x - 1, coordinate.y];
+        Cell? left = this[coordinate.x, coordinate.y + 1];
+        return new List<Cell?>() { top, left, right, bottom };
+    }
     public Maze Clone()
     {
         int rows = Cells.GetLength(0);

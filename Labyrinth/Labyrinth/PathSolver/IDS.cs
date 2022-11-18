@@ -13,17 +13,22 @@ internal class IDS : IPathSolver
         {
             SearchResult searchResult = DFS(state, state, depth, 0, printSteps);
             if (searchResult.State != null)
+            {
+                Console.WriteLine("Iterations: " + _iteration);
                 return new SearchResult(searchResult.State, searchResult.State.Generation);
+            }
         }
         return new SearchResult(null, int.MaxValue);
+
     }
 
     private SearchResult DFS(State init, State current, int depth, int storedCount, bool printSteps)
     {
         if (current.Generation < depth)
         {
+            _iteration++;
             if (printSteps)
-                current.PrintState(++_iteration);
+                current.PrintState(_iteration);
 
             if (current.Distance == 1)
                 return new SearchResult(current, storedCount);

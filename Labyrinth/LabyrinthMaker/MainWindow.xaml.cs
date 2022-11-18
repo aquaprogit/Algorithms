@@ -1,6 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -23,11 +25,10 @@ public partial class MainWindow : Window
     {
         get => _size;
         set {
-            _size = value;
-            if (_size % 2 == 0)
-            {
-                _size++;
-            }
+            if (value % 2 == 0)
+                _size = value + (_size > value ? -1 : 1);
+            else
+                _size = value;
             Grid grid = new Grid();
             for (int i = 0; i < Size; i++)
             {
@@ -58,6 +59,7 @@ public partial class MainWindow : Window
             grid.Width = 500;
             Main_Grid.Children.Clear();
             Main_Grid.Children.Add(grid);
+            _mazeGenerator?.GenerateMaze(Size);
         }
     }
     public MainWindow()
@@ -72,16 +74,28 @@ public partial class MainWindow : Window
                 for (int columnIndex = 0; columnIndex < cells.GetLength(1); columnIndex++)
                 {
                     IEnumerable<Border> borders = ((Grid)Main_Grid.Children[0]).Children.Cast<Border>();
+
                     if (borders.First(b => Grid.GetRow(b) == rowIndex
                         && Grid.GetColumn(b) == columnIndex).Child is not Grid curr)
                     {
                         continue;
                     }
-
-                    curr.Background = cells[rowIndex, columnIndex] ? Brushes.White : Brushes.Black;
+                    if (rowIndex == 1 && columnIndex == 1)
+                        curr.Background = Brushes.Green;
+                    else if (rowIndex == Size - 2 && columnIndex == Size - 2)
+                        curr.Background = Brushes.Red;
+                    else
+                        curr.Background = cells[rowIndex, columnIndex] ? Brushes.White : Brushes.Black;
                 }
             }
         });
+        //for (int i = 1; i <= 20; i++)
+        //{
+        //    Size = new Random().Next(13, 22);
+        //    Thread.Sleep(10);
+        //    _mazeGenerator.GenerateMaze(Size);
+        //    SaveToFile($"States\\state{i}.json");
+        //}
     }
 
     private void Cell_MouseEnter(object sender, MouseEventArgs e)
@@ -106,6 +120,12 @@ public partial class MainWindow : Window
 
     private void Button_Click(object sender, RoutedEventArgs e)
     {
+        SaveToFile("result.json");
+        MessageBox.Show("Saved successfully", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+    }
+
+    private void SaveToFile(string path)
+    {
         CompressedCell[,] cells = new CompressedCell[Size, Size];
         for (int rowIndex = 0; rowIndex < Size; rowIndex++)
         {
@@ -129,8 +149,7 @@ public partial class MainWindow : Window
             }
         }
         string result = JsonConvert.SerializeObject(cells, Formatting.Indented);
-        File.WriteAllText("result.json", result);
-        MessageBox.Show("Saved successfully", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+        File.WriteAllText(path, result);
     }
 
     private void Button_Click_1(object sender, RoutedEventArgs e)
