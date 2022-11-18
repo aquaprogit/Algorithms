@@ -31,7 +31,7 @@ internal class IDS : IPathSolver
                 current.PrintState(_iteration);
 
             if (current.Distance == 1)
-                return new SearchResult(current, storedCount);
+                return new SearchResult(current, 0, storedCount);
             List<State> children = current.GetChildren();
             foreach (State child in children)
             {
