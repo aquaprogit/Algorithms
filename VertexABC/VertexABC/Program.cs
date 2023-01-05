@@ -1,25 +1,27 @@
-﻿// Declare and initialize the graph
-using VertexABC;
+﻿using VertexABC;
 
 internal class Program
 {
     private static void Main(string[] args)
     {
-        int[][] graph = GenerateGraph(50, 25);
-        Console.WriteLine("Graph generated...");
-        // Declare and initialize the number of colors
-        int numColors = 100;
+        Graph graph = Graph.GenerateGraph(50, 25);
 
-        // Create an instance of the ABC class
-        ABC abc = new ABC(graph, numColors);
+        
+        //int[][] graph = GenerateGraph(50, 25);
+        //Console.WriteLine("Graph generated...");
+        //// Declare and initialize the number of colors
+        //int numColors = 100;
 
-        // Run the ABC algorithm
-        int[] bestSolution = abc.Solve();
+        //// Create an instance of the ABC class
+        //ABC abc = new ABC(graph, numColors);
 
-        // Print the best solution
-        Console.WriteLine("Best solution: " + string.Join(", ", bestSolution));
-        Console.WriteLine("Used colors: " + bestSolution.ToList().Distinct().Count());
-        Console.WriteLine(IsCorrect(graph, bestSolution) ? "Correct" : "Incorrect");
+        //// Run the ABC algorithm
+        //int[] bestSolution = abc.Solve();
+
+        //// Print the best solution
+        //Console.WriteLine("Best solution: " + string.Join(", ", bestSolution));
+        //Console.WriteLine("Used colors: " + bestSolution.ToList().Distinct().Count());
+        //Console.WriteLine(IsCorrect(graph, bestSolution) ? "Correct" : "Incorrect");
 
         Console.ReadLine();
 
@@ -37,35 +39,5 @@ internal class Program
         }
         return true;
     }
-    private static int[][] GenerateGraph(int numVertices, int maxEdges)
-    {
-        Random rand = new Random();
-        int[][] graph = new int[numVertices][];
-        int total = 0;
-        for (int i = 0; i < numVertices; i++)
-        {
-            List<int> neighbors = new List<int>();
-            for (int j = 0; j < numVertices; j++)
-            {
-                if (i != j && rand.NextDouble() < 0.5)
-                    neighbors.Add(j);
-            }
-            while (neighbors.Count < 2)
-            {
-                int neighbor = rand.Next(numVertices);
-                if (neighbor != i && !neighbors.Contains(neighbor))
-                    neighbors.Add(neighbor);
-            }
 
-            while (neighbors.Count > maxEdges)
-            {
-                int index = rand.Next(neighbors.Count);
-                neighbors.RemoveAt(index);
-            }
-            graph[i] = neighbors.ToArray();
-            Console.WriteLine(neighbors.Count);
-        }
-        Console.WriteLine(total);
-        return graph;
-    }
 }

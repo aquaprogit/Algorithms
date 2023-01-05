@@ -2,8 +2,17 @@
 
 internal class ABC
 {
+
     // Constants
-    private const int MAX_ITERATIONS = 10000;
+    private const int MAX_ITERATIONS = 10_000;
+    
+    private int LowerBound { get; init; }
+    private int UpperBound { get; init; }
+
+    public int EmployedCount { get; init; }
+    public int OnlookersCount { get; init; }
+    public int ScoutsCount { get; init; }
+
     private const int NUM_BEES = 35;
     private const int NUM_ONLOOKERS = 5;
     private const int NUM_SCOUTS = 10;
