@@ -2,8 +2,8 @@
 
 public class Vertex : IEquatable<Vertex>
 {
-    private static ulong _idMax = 0;
-    public ulong Id { get; set; }
+    private static int _idMax = 0;
+    public int Id { get; set; }
     public int ColorValue { get; private set; }
     public HashSet<Vertex> Neighbors { get; init; }
 
