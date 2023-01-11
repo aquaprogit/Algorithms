@@ -1,197 +1,104 @@
-﻿namespace VertexABC;
+﻿using VertexABC.Hive;
 
-internal class ABC
+namespace VertexABC;
+
+class ABC
 {
-
-    // Constants
-    private const int MAX_ITERATIONS = 10_000;
-    private const int NUM_BEES = 35;
-    private const int NUM_ONLOOKERS = 5;
-    private const int NUM_SCOUTS = 10;
-    private const int LOWER_BOUND = 1;
-    private const int UPPER_BOUND = 3;
-
-    // Fields
-    private readonly int _colorsCount;
     private readonly int[][] _graph;
-    private readonly Random _rand;
+
     private int[] _bestSolution;
     private double _bestFitness;
-    private double[][] _population;
-    private readonly double[] _fitnessValues;
-    private readonly double[] _trialValues;
-
-    // Constructor
-    public ABC(int[][] graph, int? colorsCount = null)
+    private readonly int _numBees;
+    private readonly int _numOnlookers;
+    private readonly int _numScouts;
+    private readonly int _lowerBound;
+    private readonly int _upperBound;
+    private const int MAX_ITERATIONS = 1_000;
+    private readonly int _totalEdges;
+    public ABC(int[][] graph, int numBees, int numOnlookers, int numScouts, int lowerBound, int upperBound)
     {
         _graph = graph;
-        _colorsCount = colorsCount ?? graph.Length * 2;
-        _rand = new Random();
-        _population = new double[NUM_BEES][];
-        _fitnessValues = new double[NUM_BEES];
-        for (int i = 0; i < NUM_BEES; i++)
-        {
-            _population[i] = InitializeBee();
-            _fitnessValues[i] = Fitness(Array.ConvertAll(_population[i], x => (int)x));
-        }
-        _bestSolution = GetBestSolution();
+        _totalEdges = _graph.Select(x => x.Length).Sum();
+        _numBees = numBees;
+        _numOnlookers = numOnlookers;
+        _numScouts = numScouts;
+        _lowerBound = lowerBound;
+        _upperBound = upperBound;
+        _bestSolution = InitializePopulation();
         _bestFitness = Fitness(_bestSolution);
-        _trialValues = new double[NUM_BEES];
-        Array.Copy(_fitnessValues, _trialValues, NUM_BEES);
-
     }
 
-    // Public methods
     public int[] Solve()
     {
         for (int i = 0; i < MAX_ITERATIONS; i++)
         {
-            _population = SendEmployedBees(_population);
-            _population = SendOnlookerBees(_population);
-            _population = SendScoutBees(_population);
-            int[] solution = GetBestSolution();
-            double fitness = Fitness(solution);
-            if (fitness < _bestFitness)
+            List<Bee> bees = new List<Bee>();
+
+            // initialize employed bees
+            for (int j = 0; j < _numBees; j++)
             {
-                _bestSolution = solution;
-                _bestFitness = fitness;
+                bees.Add(new EmployedBee(_lowerBound, _upperBound));
             }
+
+            //initialize onlookers
+            for (int j = 0; j < _numOnlookers; j++)
+            {
+                bees.Add(new OnlookerBee(_lowerBound, _upperBound));
+            }
+
+            //initialize scouts
+            for (int j = 0; j < _numScouts; j++)
+            {
+                bees.Add(new ScoutBee());
+            }
+
+            // Send employed bees to generate new solutions
+            List<int[]> newSolutions = new List<int[]>();
+            foreach (var bee in bees.Where(b => b is EmployedBee))
+            {
+                newSolutions.Add(bee.GenerateSolution(_graph, _bestSolution));
+            }
+            // Send onlooker bees to generate new solutions
+            foreach (var bee in bees.Where(b => b is OnlookerBee))
+            {
+                newSolutions.Add(bee.GenerateSolution(_graph, _bestSolution));
+            }
+            // Send scout bees to generate new solutions
+            foreach (var bee in bees.Where(b => b is ScoutBee))
+            {
+                newSolutions.Add(bee.GenerateSolution(_graph));
+            }
+            // select the best solution
+            for (int iter = 0; iter < newSolutions.Count; iter++)
+            {
+                int[] solution = newSolutions[iter];
+                double fitness = Fitness(solution);
+                if (fitness < _bestFitness)
+                {
+                    _bestFitness = fitness;
+                    _bestSolution = solution;
+                }
+            }
+
         }
         return _bestSolution;
     }
-
-    // Private methods
-    private double[] InitializeBee()
+    private int[] InitializePopulation()
     {
-        double[] bee = new double[_graph.Length];
-        for (int i = 0; i < _graph.Length; i++)
-        {
-            bee[i] = _rand.NextDouble() * (_colorsCount - 1) + 1;
-        }
-        return bee;
+        var initialSolution = new ScoutBee().GenerateSolution(_graph);
+        return initialSolution;
     }
-
-    private double[] GenerateNeighbor(double[] bee)
-    {
-        double[] neighbor = (double[])bee.Clone();
-        int dimension = _rand.Next(_graph.Length);
-        neighbor[dimension] = neighbor[dimension] + (_rand.NextDouble() - 0.5) * 2 * (UPPER_BOUND - LOWER_BOUND);
-        if (neighbor[dimension] < LOWER_BOUND)
-        {
-            neighbor[dimension] = LOWER_BOUND;
-        }
-        else if (neighbor[dimension] > UPPER_BOUND)
-        {
-            neighbor[dimension] = UPPER_BOUND;
-        }
-        return neighbor;
-    }
-
-    private double[][] SendEmployedBees(double[][] population)
-    {
-        for (int i = 0; i < population.Length; i++)
-        {
-            double[] neighbor = GenerateNeighbor(population[i]);
-            int[] intNeighbor = Array.ConvertAll(neighbor, x => (int)x);
-            double fitness = Fitness(intNeighbor);
-            if (fitness < _fitnessValues[i])
-            {
-                population[i] = neighbor;
-                _fitnessValues[i] = fitness;
-                _trialValues[i] = 0;
-            }
-            else
-            {
-                _trialValues[i]++;
-            }
-        }
-        return population;
-    }
-
-    private double[][] SendOnlookerBees(double[][] population)
-    {
-        int[] prob = CalculateProbabilities();
-        for (int i = 0; i < NUM_ONLOOKERS; i++)
-        {
-            int index = SelectNeighbor(prob);
-            double[] neighbor = GenerateNeighbor(population[index]);
-            int[] intNeighbor = Array.ConvertAll(neighbor, x => (int)x);
-            double fitness = Fitness(intNeighbor);
-            if (fitness < _fitnessValues[index])
-            {
-                population[index] = neighbor;
-                _fitnessValues[index] = fitness;
-                _trialValues[index] = 0;
-            }
-            else
-            {
-                _trialValues[index]++;
-            }
-        }
-        return population;
-    }
-
-    private double[][] SendScoutBees(double[][] population)
-    {
-        for (int i = 0; i < NUM_SCOUTS; i++)
-        {
-            int index = Array.IndexOf(_trialValues, _trialValues.Max());
-            population[index] = InitializeBee();
-            _fitnessValues[index] = Fitness(Array.ConvertAll(population[index], x => (int)x));
-            _trialValues[index] = 0;
-        }
-        return population;
-    }
-
-    private int[] GetBestSolution()
-    {
-        int index = Array.IndexOf(_fitnessValues, _fitnessValues.Min());
-        return Array.ConvertAll(_population[index], x => (int)x);
-    }
-
     private double Fitness(int[] solution)
     {
-        int conflicts = 0;
+        int violations = 0;
         for (int i = 0; i < _graph.Length; i++)
         {
-            foreach (int neighbor in _graph[i])
+            for (int j = 0; j < _graph[i].Length; j++)
             {
-                if (solution[i] == solution[neighbor])
-                {
-                    conflicts++;
-                }
+                if (solution[i] == solution[_graph[i][j]])
+                    violations++;
             }
         }
-        return conflicts;
+        return (double)violations / _totalEdges;
     }
-
-    private int[] CalculateProbabilities()
-    {
-        int[] prob = new int[NUM_BEES];
-        double sum = 0;
-        for (int i = 0; i < NUM_BEES; i++)
-        {
-            sum += _fitnessValues[i];
-        }
-        for (int i = 0; i < NUM_BEES; i++)
-        {
-            prob[i] = (int)(_fitnessValues[i] / sum * NUM_ONLOOKERS);
-        }
-        return prob;
-    }
-
-    private int SelectNeighbor(int[] prob)
-    {
-        int index = _rand.Next(NUM_ONLOOKERS);
-        for (int i = 0; i < NUM_BEES; i++)
-        {
-            index -= prob[i];
-            if (index < 0)
-            {
-                return i;
-            }
-        }
-        return NUM_BEES - 1;
-    }
-
 }
