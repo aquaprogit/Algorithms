@@ -5,14 +5,6 @@ internal class ABC
 
     // Constants
     private const int MAX_ITERATIONS = 10_000;
-    
-    private int LowerBound { get; init; }
-    private int UpperBound { get; init; }
-
-    public int EmployedCount { get; init; }
-    public int OnlookersCount { get; init; }
-    public int ScoutsCount { get; init; }
-
     private const int NUM_BEES = 35;
     private const int NUM_ONLOOKERS = 5;
     private const int NUM_SCOUTS = 10;
@@ -20,7 +12,7 @@ internal class ABC
     private const int UPPER_BOUND = 3;
 
     // Fields
-    private readonly int _numColors;
+    private readonly int _colorsCount;
     private readonly int[][] _graph;
     private readonly Random _rand;
     private int[] _bestSolution;
@@ -30,10 +22,10 @@ internal class ABC
     private readonly double[] _trialValues;
 
     // Constructor
-    public ABC(int[][] graph, int numColors)
+    public ABC(int[][] graph, int? colorsCount = null)
     {
         _graph = graph;
-        _numColors = numColors;
+        _colorsCount = colorsCount ?? graph.Length * 2;
         _rand = new Random();
         _population = new double[NUM_BEES][];
         _fitnessValues = new double[NUM_BEES];
@@ -74,7 +66,7 @@ internal class ABC
         double[] bee = new double[_graph.Length];
         for (int i = 0; i < _graph.Length; i++)
         {
-            bee[i] = _rand.NextDouble() * (_numColors - 1) + 1;
+            bee[i] = _rand.NextDouble() * (_colorsCount - 1) + 1;
         }
         return bee;
     }
