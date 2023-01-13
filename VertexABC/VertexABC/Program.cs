@@ -4,7 +4,7 @@ internal class Program
 {
     private static void Main(string[] args)
     {
-        int[][] graph = GenerateGraph(300, 25);
+        int[][] graph = GenerateGraph(250, 25);
         //    new int[22][] {
         //    new int[] { 1 },
         //    new int[] { 0, 2, 4 },
@@ -38,7 +38,7 @@ internal class Program
 
         ABC abc = new ABC(graph, numBees, numOnlookers, numScouts, lowerBound, upperBound);
 
-        int[] bestSolution = abc.Solve();
+        int[] bestSolution = abc.Solve(true);
         int colors = bestSolution.Distinct().Count();
         if (IsCorrect(graph, bestSolution))
         {
