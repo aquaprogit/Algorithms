@@ -32,54 +32,34 @@ class ABC
     {
         for (int i = 0; i < MAX_ITERATIONS; i++)
         {
-            List<Bee> bees = new List<Bee>();
+            List<ScoutBee> scoutBees = new List<ScoutBee>();
+            List<Bee> otherBees = new List<Bee>();
 
-            // initialize employed bees
             for (int j = 0; j < _numBees; j++)
-            {
-                bees.Add(new EmployedBee(_lowerBound, _upperBound));
-            }
+                otherBees.Add(new EmployedBee(_lowerBound, _upperBound));
 
-            //initialize onlookers
             for (int j = 0; j < _numOnlookers; j++)
-            {
-                bees.Add(new OnlookerBee(_lowerBound, _upperBound));
-            }
+                otherBees.Add(new OnlookerBee(_lowerBound, _upperBound));
 
-            //initialize scouts
             for (int j = 0; j < _numScouts; j++)
-            {
-                bees.Add(new ScoutBee());
-            }
+                scoutBees.Add(new ScoutBee());
 
-            // Send employed bees to generate new solutions
-            List<int[]> newSolutions = new List<int[]>();
-            foreach (var bee in bees.Where(b => b is EmployedBee))
+            HashSet<int[]> newSolutions = new HashSet<int[]>();
+            foreach (Bee bee in otherBees)
             {
+                if (bee is ScoutBee)
+                    continue;
                 newSolutions.Add(bee.GenerateSolution(_graph, _bestSolution));
             }
-            // Send onlooker bees to generate new solutions
-            foreach (var bee in bees.Where(b => b is OnlookerBee))
-            {
-                newSolutions.Add(bee.GenerateSolution(_graph, _bestSolution));
-            }
-            // Send scout bees to generate new solutions
-            foreach (var bee in bees.Where(b => b is ScoutBee))
+            foreach (ScoutBee bee in scoutBees)
             {
                 newSolutions.Add(bee.GenerateSolution(_graph));
             }
-            // select the best solution
-            for (int iter = 0; iter < newSolutions.Count; iter++)
-            {
-                int[] solution = newSolutions[iter];
-                double fitness = Fitness(solution);
-                if (fitness < _bestFitness)
-                {
-                    _bestFitness = fitness;
-                    _bestSolution = solution;
-                }
-            }
 
+            Solution bestSolution = newSolutions.Select(s => new Solution(_graph, s)).MaxBy(solution => solution.Fitness)!;
+
+            _bestSolution = bestSolution.ColorSet;
+            _bestFitness = bestSolution.Fitness;
         }
         return _bestSolution;
     }
@@ -95,10 +75,104 @@ class ABC
         {
             for (int j = 0; j < _graph[i].Length; j++)
             {
-                if (solution[i] == solution[_graph[i][j]])
+                if (solution[i] == solution[_graph[i][j]] && i != j)
                     violations++;
             }
         }
-        return (double)violations / _totalEdges;
+        int chromaticNumber = ChromaticNumber(_graph);
+        int numDistinctColors = solution.Distinct().Count();
+        int totalColors = chromaticNumber * _graph.Length;
+        return 1 - (double)(violations + numDistinctColors) / totalColors;
+    }
+    private static int ChromaticNumber(int[][] graph)
+    {
+        int[] colors = new int[graph.Length];
+        Array.Fill(colors, -1);
+        colors[0] = 0;
+
+        bool[] availableColors = new bool[graph.Length];
+        for (int i = 0; i < graph.Length; i++)
+        {
+            Array.Fill(availableColors, true);
+            for (int j = 0; j < graph[i].Length; j++)
+            {
+                int neighbor = graph[i][j];
+                if (colors[neighbor] != -1)
+                    availableColors[colors[neighbor]] = false;
+            }
+
+            int color = 0;
+            for (int j = 0; j < availableColors.Length; j++)
+            {
+                if (availableColors[j])
+                {
+                    color = j;
+                    break;
+                }
+            }
+            colors[i] = color;
+        }
+
+        return colors.Max() + 1;
+    }
+}
+class Solution
+{
+    public int[] ColorSet { get; set; }
+    public int[][] Graph { get; set; }
+
+    public Solution(int[][] graph, int[] solution)
+    {
+        Graph = graph;
+        ColorSet = solution;
+    }
+    public double Fitness
+    {
+        get {
+            int violations = 0;
+            for (int i = 0; i < Graph.Length; i++)
+            {
+                for (int j = 0; j < Graph[i].Length; j++)
+                {
+                    if (ColorSet[i] == ColorSet[Graph[i][j]] && i != j)
+                        violations++;
+                }
+            }
+            int chromaticNumber = ChromaticNumber(Graph);
+            int numDistinctColors = ColorSet.Distinct().Count();
+            int totalColors = chromaticNumber * Graph.Length;
+            return 1 - (double)(violations + numDistinctColors) / totalColors;
+        }
+    }
+    private static int ChromaticNumber(int[][] graph)
+    {
+        int[] colors = new int[graph.Length];
+        Array.Fill(colors, -1);
+        colors[0] = 0;
+
+        bool[] availableColors = new bool[graph.Length];
+        for (int i = 0; i < graph.Length; i++)
+        {
+            Array.Fill(availableColors, true);
+            for (int j = 0; j < graph[i].Length; j++)
+            {
+                int neighbor = graph[i][j];
+                if (colors[neighbor] != -1)
+                    availableColors[colors[neighbor]] = false;
+            }
+
+            int color = 0;
+            for (int j = 0; j < availableColors.Length; j++)
+            {
+                if (availableColors[j])
+                {
+                    color = j;
+                    break;
+                }
+            }
+            colors[i] = color;
+        }
+
+        return colors.Max() + 1;
     }
 }

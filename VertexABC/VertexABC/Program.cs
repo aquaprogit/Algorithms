@@ -4,37 +4,20 @@ internal class Program
 {
     private static void Main(string[] args)
     {
-        int[][] graph = GenerateGraph(300, 25);
-        //    new int[22][] {
-        //    new int[] { 1 },
-        //    new int[] { 0, 2, 4 },
-        //    new int[] { 1, 6 },
-        //    new int[] { 4 },
-        //    new int[] { 3, 1, 5 },
-        //    new int[] { 4, 7 },
-        //    new int[] { 7, 9, 10, 2 },
-        //    new int[] { 5, 8, 20, 9, 6 },
-        //    new int[] { 7 },
-        //    new int[] { 7, 6 },
-        //    new int[] { 6, 21, 11 },
-        //    new int[] { 10, 14, 13, 12 },
-        //    new int[] { 11 },
-        //    new int[] { 11 },
-        //    new int[] { 11, 21, 15 },
-        //    new int[] { 14, 19 },
-        //    new int[] { 19 },
-        //    new int[] { 21, 18 },
-        //    new int[] { 17 },
-        //    new int[] { 17, 16, 15 },
-        //    new int[] { 7, 17 },
-        //    new int[] { 10, 14, 17 }
-        //};
+        int[][] graph =
+            new int[5][] {
+            new int[] { 1},
+            new int[] {0,3,4},
+            new int[] {3,4},
+            new int[] {1,2,4},
+            new int[] {1,3,2}
+        };
 
-        int numBees = 50;
-        int numOnlookers = 10;
-        int numScouts = 20;
+        int numBees = 20;
+        int numOnlookers = 8;
+        int numScouts = 2;
         int lowerBound = 1;
-        int upperBound = 50;
+        int upperBound = 5;
 
         ABC abc = new ABC(graph, numBees, numOnlookers, numScouts, lowerBound, upperBound);
 
@@ -42,7 +25,11 @@ internal class Program
         int colors = bestSolution.Distinct().Count();
         if (IsCorrect(graph, bestSolution))
         {
-            Console.WriteLine(string.Join(", ", bestSolution));
+            Console.WriteLine("Colors used: " + colors);
+            for (int i = 0; i < bestSolution.Length; i++)
+            {
+                Console.Write(i + " = " + bestSolution[i] + ",\n");
+            }
         }
         else
         {
@@ -92,6 +79,4 @@ internal class Program
         }
         return true;
     }
-
-
 }
