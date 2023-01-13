@@ -5,44 +5,28 @@ internal class Program
     private static void Main(string[] args)
     {
         int[][] graph = GenerateGraph(250, 25);
-        //    new int[22][] {
-        //    new int[] { 1 },
-        //    new int[] { 0, 2, 4 },
-        //    new int[] { 1, 6 },
-        //    new int[] { 4 },
-        //    new int[] { 3, 1, 5 },
-        //    new int[] { 4, 7 },
-        //    new int[] { 7, 9, 10, 2 },
-        //    new int[] { 5, 8, 20, 9, 6 },
-        //    new int[] { 7 },
-        //    new int[] { 7, 6 },
-        //    new int[] { 6, 21, 11 },
-        //    new int[] { 10, 14, 13, 12 },
-        //    new int[] { 11 },
-        //    new int[] { 11 },
-        //    new int[] { 11, 21, 15 },
-        //    new int[] { 14, 19 },
-        //    new int[] { 19 },
-        //    new int[] { 21, 18 },
-        //    new int[] { 17 },
-        //    new int[] { 17, 16, 15 },
-        //    new int[] { 7, 17 },
-        //    new int[] { 10, 14, 17 }
+        //    new int[5][] {
+        //    new int[] { 1},
+        //    new int[] {0,3,4},
+        //    new int[] {3,4},
+        //    new int[] {1,2,4},
+        //    new int[] {1,3,2}
         //};
-
-        int numBees = 50;
-        int numOnlookers = 10;
-        int numScouts = 20;
+        int numBees = 35;
+        int numOnlookers = 5;
+        int numScouts = 2;
         int lowerBound = 1;
-        int upperBound = 50;
+        int upperBound = 100;
 
         ABC abc = new ABC(graph, numBees, numOnlookers, numScouts, lowerBound, upperBound);
 
-        int[] bestSolution = abc.Solve(true);
-        int colors = bestSolution.Distinct().Count();
-        if (IsCorrect(graph, bestSolution))
+        Solution bestSolution = abc.Solve(true);
+        int colors = bestSolution.ColorSet.Distinct().Count();
+        if (IsCorrect(graph, bestSolution.ColorSet))
         {
-            Console.WriteLine(string.Join(", ", bestSolution));
+            Console.WriteLine("Colors used: " + colors);
+            Console.WriteLine("Chromatic number: " + ChromaticNumber(graph));
+            Console.WriteLine(bestSolution);
         }
         else
         {
@@ -57,10 +41,14 @@ internal class Program
         for (int i = 0; i < numVertices; i++)
         {
             List<int> neighbors = new List<int>();
+            int edges = 0;
             for (int j = 0; j < numVertices; j++)
             {
-                if (i != j && rand.NextDouble() < 0.5)
+                if (i != j && rand.NextDouble() < 0.5 && edges < maxEdges)
+                {
                     neighbors.Add(j);
+                    edges++;
+                }
             }
             while (neighbors.Count < 2)
             {
@@ -68,16 +56,18 @@ internal class Program
                 if (neighbor != i && !neighbors.Contains(neighbor))
                     neighbors.Add(neighbor);
             }
-
-            while (neighbors.Count > maxEdges)
-            {
-                int index = rand.Next(neighbors.Count);
-                neighbors.RemoveAt(index);
-            }
             graph[i] = neighbors.ToArray();
+        }
+        for (int i = 0; i < numVertices * 0.995; i++)
+        {
+            int vertex = rand.Next(numVertices / 2);
+            int neighbor = graph[vertex][rand.Next(graph[vertex].Length)];
+            graph[vertex] = graph[vertex].Where(x => x != neighbor).ToArray();
+            graph[neighbor] = graph[neighbor].Where(x => x != vertex).ToArray();
         }
         return graph;
     }
+
     private static bool IsCorrect(int[][] graph, int[] solution)
     {
         for (int i = 0; i < graph.Length; i++)
@@ -92,6 +82,35 @@ internal class Program
         }
         return true;
     }
+    private static int ChromaticNumber(int[][] graph)
+    {
+        int[] colors = new int[graph.Length];
+        Array.Fill(colors, -1);
+        colors[0] = 0;
 
+        bool[] availableColors = new bool[graph.Length];
+        for (int i = 0; i < graph.Length; i++)
+        {
+            Array.Fill(availableColors, true);
+            for (int j = 0; j < graph[i].Length; j++)
+            {
+                int neighbor = graph[i][j];
+                if (colors[neighbor] != -1)
+                    availableColors[colors[neighbor]] = false;
+            }
 
+            int color = 0;
+            for (int j = 0; j < availableColors.Length; j++)
+            {
+                if (availableColors[j])
+                {
+                    color = j;
+                    break;
+                }
+            }
+            colors[i] = color;
+        }
+
+        return colors.Max() + 1;
+    }
 }
