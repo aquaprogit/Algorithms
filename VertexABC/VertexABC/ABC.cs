@@ -2,92 +2,84 @@
 
 namespace VertexABC;
 
-class ABC
+public class ABC
 {
-    private readonly int[][] _graph;
+    private readonly Graph _initialGraph;
+    private readonly int _verticesCount;
+    private readonly int _scoutsCount;
+    private readonly int _onlookersCount;
+    private readonly List<ScoutBee> _scouts;
+    private readonly List<OnlookerBee> _onlookers;
+    private readonly Queue<int> _availableColors;
+    private readonly List<int> _usedColors;
 
-    private int[] _bestSolution;
-    private double _bestFitness;
-    private readonly int _numBees;
-    private readonly int _numOnlookers;
-    private readonly int _numScouts;
-    private readonly int _lowerBound;
-    private readonly int _upperBound;
-    private readonly int _totalEdges;
-    private const int MAX_ITERATIONS = 10000;
-    public ABC(int[][] graph, int numBees, int numOnlookers, int numScouts, int lowerBound, int upperBound)
+    public ABC(Graph graph, int scoutsCount, int onlookersCount)
     {
-        _graph = graph;
-        Solution.Graph = graph;
-        _totalEdges = graph.Select(x => x.Length).Sum();
-        Solution.TotalEdges = _totalEdges;
-        _numBees = numBees;
-        _numOnlookers = numOnlookers;
-        _numScouts = numScouts;
-        _lowerBound = lowerBound;
-        _upperBound = upperBound;
-        _bestSolution = InitializePopulation();
-        _bestFitness = Fitness(_bestSolution);
+        _initialGraph = graph;
+        _verticesCount = graph.Vertices.Count;
+        _scoutsCount = scoutsCount;
+        _onlookersCount = onlookersCount;
+        _scouts = Enumerable.Range(0, scoutsCount).Select(_ => new ScoutBee((Graph)graph.Clone())).ToList();
+        _onlookers = Enumerable.Range(0, onlookersCount).Select(_ => new OnlookerBee()).ToList();
+        _availableColors = new Queue<int>(Enumerable.Range(0, _verticesCount));
+        _usedColors = new List<int>(_verticesCount);
     }
 
-    public Solution Solve(bool printIterations = false)
+    public Graph Solve(bool printIterations = false)
     {
-        for (int i = 0; i < MAX_ITERATIONS; i++)
+        SelectFirstVertices();
+        var iteration = 0;
+        while (_scouts.Any(s => s.AlreadySelected.Count != _verticesCount))
         {
-            List<ScoutBee> scoutBees = new List<ScoutBee>();
-            List<Bee> otherBees = new List<Bee>();
+            var scoutsVertices = _scouts.ToDictionary(s => s, s => s.SelectVertex());
+            var verticesValues = scoutsVertices.Select(pair => new {
+                Vertex = pair.Value,
+                Value = pair.Key.GetVertexValue(pair.Value, scoutsVertices.Values, _onlookersCount)
+            });
 
-            for (int j = 0; j < _numBees; j++)
-                otherBees.Add(new EmployedBee(_lowerBound, _upperBound));
-
-            for (int j = 0; j < _numOnlookers; j++)
-                otherBees.Add(new OnlookerBee(_lowerBound, _upperBound));
-
-            for (int j = 0; j < _numScouts; j++)
-                scoutBees.Add(new ScoutBee());
-
-            HashSet<Solution> newSolutions = new HashSet<Solution>();
-            foreach (Bee bee in otherBees)
+            foreach (var verticesValue in verticesValues)
             {
-                if (bee is ScoutBee)
-                    continue;
-                newSolutions.Add(new Solution(bee.GenerateSolution(_graph, _bestSolution)));
-            }
-            foreach (ScoutBee bee in scoutBees)
-            {
-                newSolutions.Add(new Solution(bee.GenerateSolution(_graph)));
-            }
+                var onlookerIndex = 0;
+                foreach (var neighbor in verticesValue.Vertex.Neighbors)
+                {
+                    if (onlookerIndex >= verticesValue.Value - 1)
+                        break;
 
-            Solution bestSolution = newSolutions.OrderBy(sol => sol.Fitness)
-                                                .OrderBy(solution => solution.ColorSet.Length)
-                                                .First()!;
+                    _onlookers[onlookerIndex++].SetVertexColor(neighbor, _usedColors, _availableColors);
+                }
 
-            _bestSolution = bestSolution.ColorSet;
-            _bestFitness = bestSolution.Fitness;
-
-            if (printIterations && i % (MAX_ITERATIONS / 100) == 0)
-            {
-                Console.WriteLine($"Iteration: {i}, Fitness: {Math.Round(_bestFitness, 5)}, UsedColors: {_bestSolution.Distinct().Count()}");
+                _onlookers[++onlookerIndex].SetVertexColor(verticesValue.Vertex, _usedColors, _availableColors);
             }
+            iteration++;
+            if (printIterations && iteration % 20 == 0)
+                PrintIteration(iteration);
         }
-        return new Solution(_bestSolution);
+
+        return _scouts.Select(s => s.Graph).MinBy(g => g.ChromaticNumber)!;
     }
-    private int[] InitializePopulation()
+
+    private void SelectFirstVertices()
     {
-        int[] initialSolution = new ScoutBee().GenerateSolution(_graph);
-        return initialSolution;
-    }
-    private double Fitness(int[] solution)
-    {
-        int violations = 0;
-        for (int i = 0; i < _graph.Length; i++)
+        var bestVertices = ScoutBee.SelectBestVerticesFromGraph(_initialGraph, _scoutsCount).ToList();
+        for (int i = 0; i < _scoutsCount; i++)
         {
-            for (int j = 0; j < _graph[i].Length; j++)
-            {
-                if (solution[i] == solution[_graph[i][j]])
-                    violations++;
-            }
+            _scouts[i].SelectedVertexId = bestVertices[i].Id;
+            _scouts[i].AlreadySelected.Add(bestVertices[i]);
         }
-        return (double)violations / _totalEdges;
+    }
+
+    private void PrintIteration(int iteration)
+    {
+        Console.WriteLine("===============================");
+        Console.WriteLine($"\tIteration: {iteration}");
+        for (int i = 0; i < _scouts.Count; i++)
+        {
+            Console.WriteLine($"Scout #{i}");
+            Console.WriteLine(_scouts[i].Graph.IsValid
+                ? $"    ChromaticNumber: {_scouts[i].Graph.ChromaticNumber}\n"
+                : "    Solution is incorrect");
+        }
+
+        Console.WriteLine();
     }
 }

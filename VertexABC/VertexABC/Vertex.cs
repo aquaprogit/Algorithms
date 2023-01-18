@@ -2,21 +2,21 @@
 
 public class Vertex : IEquatable<Vertex>
 {
-    private static ulong _idMax = 0;
-    public ulong Id { get; set; }
-    public int ColorValue { get; private set; }
+    public int Id { get; init; }
+    public int ColorValue { get; set; }
     public HashSet<Vertex> Neighbors { get; init; }
 
-    public bool IsValid => Neighbors.Any(v => v.ColorValue == ColorValue) == false;
+    public int Degree => Neighbors.Count;
+    public bool IsValid => Neighbors.All(v => v.ColorValue != ColorValue);
 
-    public Vertex(int colorValue = -1)
+    public Vertex(int id, int colorValue = -1)
     {
+        Id = id;
         ColorValue = colorValue;
         Neighbors = new HashSet<Vertex>();
-        Id = _idMax++;
     }
 
-    public void AddNeighbor(Vertex neighbor)
+    public void LinkTo(Vertex neighbor)
     {
         Neighbors.Add(neighbor);
         neighbor.Neighbors.Add(this);
@@ -24,8 +24,9 @@ public class Vertex : IEquatable<Vertex>
 
     public override string ToString()
     {
-        return $"{Id} for {ColorValue}";
+        return $"{nameof(Id)}: {Id}, {nameof(ColorValue)}: {ColorValue}, {nameof(Degree)}: {Degree}, {nameof(Neighbors)}: {string.Join(" ", Neighbors.Select(n => n.Id))}";
     }
+
     public bool Equals(Vertex? other)
     {
         return other?.Id == Id;
