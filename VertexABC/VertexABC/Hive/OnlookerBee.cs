@@ -1,39 +1,21 @@
 ﻿namespace VertexABC.Hive;
 
-class OnlookerBee : Bee
+class OnlookerBee
 {
-    private readonly int _upperBound;
-    private readonly int _lowerBound;
-
-    public OnlookerBee(int lowerBound, int upperBound)
+    public void SetVertexColor(Vertex vertex, List<int> usedColors, Queue<int> availableColors)
     {
-        _lowerBound = lowerBound;
-        _upperBound = upperBound;
-    }
+        var usedColorIndex = 0;
+        while (!vertex.IsValid || vertex.ColorValue == -1)
+        {
+            if (usedColorIndex == usedColors.Count - 1 || usedColors.Count == 0)
+            {
+                var color = availableColors.Dequeue();
+                vertex.ColorValue = color;
+                usedColors.Add(color);
+                return;
+            }
 
-    public override int[] GenerateSolution(int[][] graph, int[]? currentSolution = null)
-    {
-        if (currentSolution == null)
-            throw new ArgumentNullException(nameof(currentSolution));
-
-        int[] newSolution = (int[])currentSolution.Clone();
-        int randomIndex = _rand.Next(graph.Length);
-        int newValue = currentSolution[randomIndex] + _rand.Next(-3, 3);
-        
-        if (newValue > _upperBound)
-            newValue = _upperBound;
-        else if (newValue < _lowerBound)
-            newValue = _lowerBound;
-        
-        newSolution[randomIndex] = newValue;
-        double newSolutionFitness = CalculateFitness(newSolution, graph);
-        return ShouldAccept(newSolutionFitness, CalculateFitness(currentSolution, graph)) ? newSolution : currentSolution;
-    }
-
-    private bool ShouldAccept(double newSolutionFitness, double currentSolutionFitness)
-    {
-        double delta = newSolutionFitness - currentSolutionFitness;
-        double probability = Math.Exp(-delta);
-        return _rand.NextDouble() < probability;
+            vertex.ColorValue = usedColors[usedColorIndex++];
+        }
     }
 }
