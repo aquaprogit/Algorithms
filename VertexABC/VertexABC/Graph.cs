@@ -19,8 +19,8 @@ public class Graph : ICloneable
 
     public void AddEdge(Vertex firstVertex, Vertex secondVertex)
     {
-        var first = Vertices.First(vertex => vertex.Id == firstVertex.Id);
-        var second = Vertices.First(vertex => vertex.Id == secondVertex.Id);
+        Vertex first = Vertices.First(vertex => vertex.Id == firstVertex.Id);
+        Vertex second = Vertices.First(vertex => vertex.Id == secondVertex.Id);
 
         if (first == null || second == null)
             throw new ArgumentOutOfRangeException(nameof(firstVertex), "One of passed parameters out of bound");
@@ -30,19 +30,19 @@ public class Graph : ICloneable
 
     public object Clone()
     {
-        var adjacencyArray = new int[Vertices.Count][];
-        var colors = Vertices.Select(vertex => vertex.ColorValue).ToArray();
-        foreach (var vertex in Vertices)
+        int[][] adjacencyArray = new int[Vertices.Count][];
+        int[] colors = Vertices.Select(vertex => vertex.ColorValue).ToArray();
+        foreach (Vertex vertex in Vertices)
         {
             adjacencyArray[vertex.Id] = new int[vertex.Degree];
             int i = 0;
-            foreach (var linked in vertex.Neighbors)
+            foreach (Vertex linked in vertex.Neighbors)
             {
                 adjacencyArray[vertex.Id][i++] = linked.Id;
             }
         }
 
-        var graph = FromJaggedArray(adjacencyArray);
+        Graph graph = FromJaggedArray(adjacencyArray);
 
         graph.Vertices.ForEach(vertex => vertex.ColorValue = colors[graph.Vertices.IndexOf(vertex)]);
 
@@ -56,21 +56,21 @@ public class Graph : ICloneable
 
     public static Graph GenerateGraph(int numVertices, int maxEdges)
     {
-        var random = new Random();
-        var graph = new Graph();
+        Random random = new Random();
+        Graph graph = new Graph();
 
         for (int i = 0; i < numVertices; i++)
         {
             graph.AddVertex(new Vertex(i));
         }
 
-        var orderedRandomly = graph.Vertices.OrderBy(_ => random.Next(numVertices)).ToList();
+        List<Vertex> orderedRandomly = graph.Vertices.OrderBy(_ => random.Next(numVertices)).ToList();
         for (int vertexIndex = 0; vertexIndex < orderedRandomly.Count; vertexIndex++)
         {
-            var first = orderedRandomly[vertexIndex];
+            Vertex first = orderedRandomly[vertexIndex];
 
-            var nextIndex = vertexIndex != orderedRandomly.Count - 1 ? vertexIndex + 1 : 0;
-            var second = orderedRandomly[nextIndex];
+            int nextIndex = vertexIndex != orderedRandomly.Count - 1 ? vertexIndex + 1 : 0;
+            Vertex second = orderedRandomly[nextIndex];
 
             graph.AddEdge(first, second);
         }
@@ -78,8 +78,8 @@ public class Graph : ICloneable
         while (graph.Vertices.All(vertex => vertex.Degree != maxEdges))
         {
             orderedRandomly = graph.Vertices.OrderBy(_ => random.Next(numVertices)).ToList();
-            var first = orderedRandomly.First();
-            var second = orderedRandomly.Last();
+            Vertex first = orderedRandomly.First();
+            Vertex second = orderedRandomly.Last();
 
             graph.AddEdge(first, second);
         }
@@ -88,7 +88,7 @@ public class Graph : ICloneable
 
     public static Graph FromJaggedArray(int[][] array)
     {
-        var graph = new Graph();
+        Graph graph = new Graph();
 
         for (int i = 0; i < array.Length; i++)
         {

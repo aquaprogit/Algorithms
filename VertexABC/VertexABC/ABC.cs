@@ -28,10 +28,10 @@ public class ABC
     public Graph Solve(bool printIterations = false)
     {
         SelectFirstVertices();
-        var iteration = 0;
+        int iteration = 0;
         while (_scouts.Any(s => s.AlreadySelected.Count != _verticesCount))
         {
-            var scoutsVertices = _scouts.ToDictionary(s => s, s => s.SelectVertex());
+            Dictionary<ScoutBee, Vertex> scoutsVertices = _scouts.ToDictionary(s => s, s => s.SelectVertex());
             var verticesValues = scoutsVertices.Select(pair => new {
                 Vertex = pair.Value,
                 Value = pair.Key.GetVertexValue(pair.Value, scoutsVertices.Values, _onlookersCount)
@@ -39,8 +39,8 @@ public class ABC
 
             foreach (var verticesValue in verticesValues)
             {
-                var onlookerIndex = 0;
-                foreach (var neighbor in verticesValue.Vertex.Neighbors)
+                int onlookerIndex = 0;
+                foreach (Vertex neighbor in verticesValue.Vertex.Neighbors)
                 {
                     if (onlookerIndex >= verticesValue.Value - 1)
                         break;
@@ -60,7 +60,7 @@ public class ABC
 
     private void SelectFirstVertices()
     {
-        var bestVertices = ScoutBee.SelectBestVerticesFromGraph(_initialGraph, _scoutsCount).ToList();
+        List<Vertex> bestVertices = ScoutBee.SelectBestVerticesFromGraph(_initialGraph, _scoutsCount).ToList();
         for (int i = 0; i < _scoutsCount; i++)
         {
             _scouts[i].SelectedVertexId = bestVertices[i].Id;
@@ -77,7 +77,7 @@ public class ABC
             Console.WriteLine($"Scout #{i}");
             Console.WriteLine(_scouts[i].Graph.IsValid
                 ? $"    ChromaticNumber: {_scouts[i].Graph.ChromaticNumber}\n"
-                : "    Solution is incorrect");
+                : "    Solution is incorrect\n");
         }
 
         Console.WriteLine();

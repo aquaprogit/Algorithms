@@ -24,12 +24,12 @@ public class Vertex : IEquatable<Vertex>
 
     public override string ToString()
     {
-        return $"{nameof(Id)}: {Id}, {nameof(ColorValue)}: {ColorValue}, {nameof(Degree)}: {Degree}, {nameof(Neighbors)}: {string.Join(" ", Neighbors.Select(n => n.Id))}";
+        return $"{nameof(Id)}: {Id}, {nameof(ColorValue)}: {ColorValue}, {nameof(Degree)}: {Degree}";
     }
 
     public bool Equals(Vertex? other)
     {
-        return other?.Id == Id;
+        return other?.Id == Id && other.ColorValue == ColorValue;
     }
     public override bool Equals(object? obj)
     {

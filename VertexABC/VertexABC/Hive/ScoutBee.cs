@@ -6,15 +6,16 @@ public class ScoutBee
     {
         Graph = graph;
         AlreadySelected = new HashSet<Vertex>(graph.Vertices.Count);
+        SelectedVertexId = -1;
     }
 
     public Graph Graph { get; }
-    public int SelectedVertexId { get; set; } = -1;
+    public int SelectedVertexId { get; set; }
     public HashSet<Vertex> AlreadySelected { get; }
 
     public Vertex SelectVertex()
     {
-        var vertex = Graph.Vertices
+        Vertex vertex = Graph.Vertices
             .Where(v => !AlreadySelected.Contains(v))
             .MaxBy(v => v.Degree)!;
 
@@ -25,7 +26,7 @@ public class ScoutBee
 
     public double GetVertexValue(Vertex vertex, IEnumerable<Vertex> selectedVertices, int onlookersCount)
     {
-        var degreeSum = selectedVertices.Sum(v => v.Degree);
+        int degreeSum = selectedVertices.Sum(v => v.Degree);
         return onlookersCount * ((double)vertex.Degree / degreeSum);
     }
 
