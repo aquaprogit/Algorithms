@@ -8,7 +8,7 @@ internal static class Extensions
             if (i != arr.Count - 1)
             {
                 Console.Write(arr[i] + " -> ");
-                if (Console.CursorLeft > Console.WindowWidth - 10) 
+                if (Console.CursorLeft > Console.WindowWidth - 10)
                     Console.WriteLine();
             }
             else

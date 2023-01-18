@@ -1,95 +1,116 @@
-﻿using static AntsTSP.Ant;
+﻿using static AntsTSP.Helper;
 
 namespace AntsTSP;
-internal static class TSPAlgorithm
+internal class TSPAlgorithm
 {
-    public static List<int> AntColonyOptimization(int[,] weights)
-    {
-        double[,] visibility = new double[Config.VerticesCount, Config.VerticesCount];
-        double[,] feromon = new double[Config.VerticesCount, Config.VerticesCount];
+    private readonly Random _random;
+    private readonly int[,] _weights;
 
-        for (int i = 0; i < weights.GetLength(0); i++)
+    private double[,] _visibility;
+    private double[,] _pheromons;
+
+    private List<int> _bestCycle;
+    private int _previousLength = -1;
+    private int _currentLength;
+    private int _stableStrike = 0;
+    private int _iteration = 0;
+
+    private static List<Ant> InitializeAnts(int commonAmount, int eliteAmount)
+    {
+        List<Ant> result = new List<Ant>();
+
+        result.AddRange(Enumerable.Range(0, commonAmount).Select(_ => new Ant()));
+        result.AddRange(Enumerable.Range(0, eliteAmount).Select(_ => new Ant(AntType.Elite)));
+
+        return result;
+    }
+    private void FillPheramons(int[,] weights)
+    {
+        for (int i = 0; i < AntsSettings.VerticesCount; i++)
         {
-            for (int j = 0; j < weights.GetLength(1); j++)
+            for (int j = 0; j < AntsSettings.VerticesCount; j++)
             {
                 if (i == j)
                     continue;
-                visibility[i, j] = 1 / (double)weights[i, j];
-                feromon[i, j] = Config.Random.Next(10, 40) / 100.0;
+
+                _visibility[i, j] = 1 / (double)weights[i, j];
+                _pheromons[i, j] = _random.Next(10, 40) / 100.0;
             }
         }
-        List<int> bestCycle = new List<int>(Config.VerticesCount + 1);
-        int previousLength = -1;
-        int currentLength;
-        int stableStrike = 0;
-        int iteration = 0;
+    }
+    private void EvaporatePheramon()
+    {
+        for (int i = 0; i < AntsSettings.VerticesCount; i++)
+        {
+            for (int j = 0; j < AntsSettings.VerticesCount; j++)
+            {
+                _pheromons[i, j] -= AntsSettings.Ro * _pheromons[i, j];
+            }
+        }
+    }
+    private void SendAnts(List<Ant> ants)
+    {
+        for (int i = 0; i < AntsSettings.CommonAnts + AntsSettings.EliteAnts; i++)
+        {
+            int plantingIndex = _random.Next(0, AntsSettings.VerticesCount);
+            ants[i].Travel(plantingIndex, _visibility, _pheromons);
+        }
+    }
+    private void UpdateBestCycle(List<Ant> ants)
+    {
+        var bestAntsResult = ants.Select(a => new { Ant = a, Length = GetCycleLength(a.Path, _weights), Path = a.Path }).MinBy(anon => anon.Length)!;
+        if (bestAntsResult.Length < GetCycleLength(_bestCycle, _weights))
+            _bestCycle = bestAntsResult.Path;
+    }
+    private void UpdatePheramones(List<Ant> ants)
+    {
+        for (int i = 0; i < AntsSettings.EliteAnts + AntsSettings.CommonAnts; i++)
+        {
+            double pheromonOffset = ants[i].GetPheromones(GetCycleLength(ants[i].Path, _weights), Helper.GreedyLength(_weights));
+            ants[i].PlantPheromon(pheromonOffset, _pheromons);
+        }
+    }
+    public TSPAlgorithm(int[,] weights)
+    {
+        _random = new Random();
+        _weights = weights;
+
+        _visibility = new double[AntsSettings.VerticesCount, AntsSettings.VerticesCount];
+        _pheromons = new double[AntsSettings.VerticesCount, AntsSettings.VerticesCount];
+
+        _bestCycle = new List<int>();
+    }
+    public List<int> Solve()
+    {
+        FillPheramons(_weights);
         do
         {
-            List<Ant> ants = new List<Ant>(Config.AntAmount);
-            for (int i = 0; i < Config.AntAmount; i++)
-            {
-                AntType type;
-                type = i < Config.EliteAntAmount ? AntType.FeromoneElite : AntType.Ordinary;
-                ants.Add(new Ant(type));
+            List<Ant> ants = InitializeAnts(AntsSettings.CommonAnts, AntsSettings.EliteAnts);
 
-                //ants travel
-                int plantingIndex = Config.Random.Next(0, Config.VerticesCount);
-                ants[i].MoveToVertix(plantingIndex);
-                while (ants[i].UnvisitedVertices.Count > 0)
-                {
-                    ants[i].MoveToNext(visibility, feromon);
-                }
-                ants[i].MoveToVertix(plantingIndex);
+            SendAnts(ants);
 
-                if (bestCycle.Any() == false)
-                    bestCycle = ants[i].Path;
-                else if (GetCycleLength(ants[i].Path, weights) < GetCycleLength(bestCycle, weights))
-                    bestCycle = ants[i].Path;
-            }
+            UpdateBestCycle(ants);
 
-            for (int i = 0; i < Config.VerticesCount; i++)
-            {
-                for (int j = 0; j < Config.VerticesCount; j++)
-                {
-                    feromon[i, j] -= Config.Ro * feromon[i, j]; //feromon evaporation
-                }
-            }
-            for (int i = 0; i < Config.AntAmount; i++)
-            {
-                double feromonAmount = ants[i].GetFeromones(weights);
-                ants[i].PlantFeromon(feromonAmount, feromon);
-            }
+            EvaporatePheramon();
+            UpdatePheramones(ants);
 
-            currentLength = GetCycleLength(bestCycle, weights);
-            if (currentLength == previousLength)
+            _currentLength = GetCycleLength(_bestCycle, _weights);
+            if (_currentLength == _previousLength)
             {
-                stableStrike++;
+                _stableStrike++;
             }
             else
             {
-                Console.WriteLine($"Length changed to: {currentLength}");
-                stableStrike = 0;
+                Console.WriteLine($"Length changed to: {_currentLength}");
+                _stableStrike = 0;
             }
-            previousLength = currentLength;
+            _previousLength = _currentLength;
         }
-        while ( /*currentLength>Config.Lmin && stableStrike<150 */ iteration < 1000);
-        PrintCycle(bestCycle, weights);
+        while (_stableStrike < 150 && _iteration++ < 1000);
 
-        return bestCycle;
-    }
-    public static int GetCycleLength(List<int> cycle, int[,] weights)
-    {
-        int length = 0;
-        for (int i = 0; i < cycle.Count - 1; i++)
-        {
-            length += weights[cycle[i], cycle[i + 1]];
-        }
-        return length;
-    }
-    public static void PrintCycle(List<int> cycle, int[,] graph)
-    {
-        Console.WriteLine("The shortest Hamiltonian cycle contains vertices in order: ");
-        cycle.Print();
-        Console.WriteLine($"Lmin: {Config.Lmin}\tL: {GetCycleLength(cycle, graph)}");
+        Console.WriteLine("Best cycle after optimization:");
+        _bestCycle.Print();
+
+        return _bestCycle;
     }
 }

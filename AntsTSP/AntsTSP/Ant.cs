@@ -1,39 +1,54 @@
 ﻿namespace AntsTSP;
-internal class Ant
+internal partial class Ant
 {
+    private readonly Random _random;
+
     public Ant(AntType antType = AntType.Ordinary)
     {
-        UnvisitedVertices = Enumerable.Range(0, Config.VerticesCount).ToList();
+        _random = new Random();
+
+        UnvisitedVertices = Enumerable.Range(0, AntsSettings.VerticesCount).ToList();
         Path = new List<int>();
         Type = antType;
     }
 
     public AntType Type { get; set; }
     public List<int> UnvisitedVertices { get; set; }
-    public List<int> Path { get; set; }
+    public List<int> Path { get; private set; }
+
+    public void Travel(int plantingVertexId, double[,] visibility, double[,] pheramons)
+    {
+        MoveToVertix(plantingVertexId);
+        while (UnvisitedVertices.Count > 0)
+        {
+            MoveToNext(visibility, pheramons);
+        }
+        MoveToVertix(plantingVertexId);
+    }
+
     public void MoveToVertix(int transitInd)
     {
         Path.Add(transitInd);
         UnvisitedVertices.Remove(transitInd);
     }
-    public void MoveToNext(double[,] visibility, double[,] feromon)
+    public void MoveToNext(double[,] visibility, double[,] pheromons)
     {
-        int transitInd = GetTransitVertixInd(visibility, feromon);
+        int transitInd = GetTransitVertixInd(visibility, pheromons);
         MoveToVertix(transitInd);
     }
-    public int GetTransitVertixInd(double[,] visibility, double[,] feromon)
+    public int GetTransitVertixInd(double[,] visibility, double[,] pheromons)
     {
         int? transitVertexInd = null;
 
-        List<double> transitProbabilities = new List<double>(UnvisitedVertices.Count);
-        FindTransitProbabilities(ref transitProbabilities, visibility, feromon);
+        List<double> transitProbabilities = FindTransitProbabilities(visibility, pheromons);
+
         if (Math.Round(transitProbabilities.Sum()) != 1)
             throw new Exception("Probabilities don\'t add up to 1");
         //
         var minStr = transitProbabilities.Min().ToString();
         var start = minStr.IndexOf('.');
-        int precision = minStr.Substring(start == -1 ? 0 : start).Length;
-        double randValue = Config.Random.Next(0, precision) / (double)precision;
+        int precision = minStr[(start == -1 ? 0 : start)..].Length;
+        double randValue = _random.Next(0, precision) / (double)precision;
         // 0 [] 0.00000001 [] 1
         double lowerBound = 0;
         for (int i = 0; i < transitProbabilities.Count; i++)
@@ -50,13 +65,14 @@ internal class Ant
         }
         return transitVertexInd != null ? transitVertexInd.Value : throw new Exception("Transition index search failed");
     }
-    public void FindTransitProbabilities(ref List<double> transitProbabilities, double[,] visibility, double[,] feromon)
+    public List<double> FindTransitProbabilities(double[,] visibility, double[,] pheromons)
     {
+        List<double> transitProbabilities = new List<double>();
         for (int i = 0; i < UnvisitedVertices.Count; i++)
         {
             transitProbabilities.Add(
-                Math.Pow(feromon[Path.Last(), UnvisitedVertices[i]], Config.Alpha) *
-                Math.Pow(visibility[Path.Last(), UnvisitedVertices[i]], Config.Beta)
+                Math.Pow(pheromons[Path.Last(), UnvisitedVertices[i]], AntsSettings.Alfa) *
+                Math.Pow(visibility[Path.Last(), UnvisitedVertices[i]], AntsSettings.Beta)
                 );
         }
         double adjacentNodeHeuristicSum = transitProbabilities.Sum();
@@ -67,35 +83,27 @@ internal class Ant
             else
                 transitProbabilities[i] /= adjacentNodeHeuristicSum;
         }
+        return transitProbabilities;
     }
-    public double GetFeromones(int[,] weights)
+    public double GetPheromones(int cycleLength, int estimatedLength)
     {
-        if (Path.Count != Config.IterFeromonAdd + 1)
+        if (Path.Count != AntsSettings.VerticesCount + 1)
             throw new InvalidOperationException("Can`t get pheromones. Ant has not completed the path");
-        if (Config.Lmin == null)
-            throw new NullReferenceException(nameof(Config.Lmin));
-
-        int cycleLength = TSPAlgorithm.GetCycleLength(Path, weights);
 
         return Type switch {
-            AntType.Ordinary => (double)Config.Lmin! / cycleLength,
-            AntType.FeromoneElite => 2 * (double)Config.Lmin! / cycleLength,
-            _ => throw new Exception("Ant type is not specified, cant determine Pheromones"),
+            AntType.Ordinary => (double)estimatedLength / cycleLength,
+            AntType.Elite => 2 * (double)estimatedLength / cycleLength,
+            _ => throw new NotImplementedException()
         };
     }
-    public void PlantFeromon(double feromonAmount, double[,] feromon)
+    public void PlantPheromon(double pheromonAmount, double[,] pheromons)
     {
-        if (Path.Count != Config.IterFeromonAdd + 1)
+        if (Path.Count != AntsSettings.VerticesCount + 1)
             throw new InvalidOperationException("Can`t get pheromones. Ant has not completed the path");
 
         for (int i = 0; i < Path.Count - 1; i++)
         {
-            feromon[Path[i], Path[i + 1]] += feromonAmount;
+            pheromons[Path[i], Path[i + 1]] += pheromonAmount;
         }
-    }
-    public enum AntType
-    {
-        Ordinary,
-        FeromoneElite,
     }
 }
