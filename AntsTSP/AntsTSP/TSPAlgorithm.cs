@@ -1,4 +1,6 @@
-﻿using static AntsTSP.Helper;
+﻿using System.Diagnostics;
+
+using static AntsTSP.Helper;
 
 namespace AntsTSP;
 internal class TSPAlgorithm
@@ -10,7 +12,7 @@ internal class TSPAlgorithm
     private double[,] _pheromons;
 
     private List<int> _bestCycle;
-    private int _previousLength = -1;
+    private int _previousLength;
     private int _currentLength;
     private int _stableStrike = 0;
     private int _iteration = 0;
@@ -74,15 +76,20 @@ internal class TSPAlgorithm
     {
         _random = new Random();
         _weights = weights;
+        _iteration = 0;
+        _previousLength = int.MaxValue;
+        _currentLength = int.MaxValue;
 
         _visibility = new double[AntsSettings.VerticesCount, AntsSettings.VerticesCount];
         _pheromons = new double[AntsSettings.VerticesCount, AntsSettings.VerticesCount];
 
         _bestCycle = new List<int>();
     }
-    public List<int> Solve()
+    public SolutionInfo Solve(bool printSteps = false)
     {
+        Stopwatch sw = Stopwatch.StartNew();
         FillPheramons(_weights);
+        //Console.WriteLine($"Lmin: {GreedyLength(_weights)}");
         do
         {
             List<Ant> ants = InitializeAnts(AntsSettings.CommonAnts, AntsSettings.EliteAnts);
@@ -101,16 +108,27 @@ internal class TSPAlgorithm
             }
             else
             {
-                Console.WriteLine($"Length changed to: {_currentLength}");
+                if (printSteps)
+                    Console.WriteLine($"New best length equals: {_currentLength}");
                 _stableStrike = 0;
             }
             _previousLength = _currentLength;
         }
         while (_stableStrike < 150 && _iteration++ < 1000);
+        sw.Stop();
+        var info = new SolutionInfo(
+            _bestCycle,
+            GetCycleLength(_bestCycle, _weights),
+            _iteration,
+            (int)sw.Elapsed.TotalSeconds,
+            AntsSettings.CommonAnts,
+            AntsSettings.EliteAnts,
+            AntsSettings.Alfa,
+            AntsSettings.Beta,
+            AntsSettings.Ro);
+        //Console.WriteLine("Best cycle after optimization:");
+        //_bestCycle.Print();
 
-        Console.WriteLine("Best cycle after optimization:");
-        _bestCycle.Print();
-
-        return _bestCycle;
+        return info;
     }
 }

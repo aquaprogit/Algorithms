@@ -43,8 +43,10 @@ public static class Helper
                 visited.Add(lowestWeightInd);
             }
             visited.Add(0);
-
+            //Console.WriteLine("Greedy algorithm\'s path: ");
+            //visited.Print();
             _greedyLength = GetCycleLength(visited, weights);
+            Console.WriteLine("Greedy length is " + _greedyLength);
         }
 
         return _greedyLength;
